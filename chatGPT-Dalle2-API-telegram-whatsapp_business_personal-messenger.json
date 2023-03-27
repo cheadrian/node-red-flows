@@ -1,0 +1,870 @@
+[
+    {
+        "id": "e6da46131ceed4fb",
+        "type": "tab",
+        "label": "OpenAI API",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "bf51565be34158ba",
+        "type": "http request",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "bearer",
+        "senderr": false,
+        "headers": [],
+        "x": 430,
+        "y": 240,
+        "wires": [
+            [
+                "7627281c058b8a40"
+            ]
+        ]
+    },
+    {
+        "id": "7efe3e431a7e6d00",
+        "type": "template",
+        "z": "e6da46131ceed4fb",
+        "name": "Message",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "Hello bot!",
+        "output": "str",
+        "x": 200,
+        "y": 120,
+        "wires": [
+            [
+                "a86e4dd004486738"
+            ]
+        ]
+    },
+    {
+        "id": "c31cc49404b315e8",
+        "type": "inject",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            },
+            {
+                "p": "chatID",
+                "v": "123456789",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 80,
+        "wires": [
+            [
+                "7efe3e431a7e6d00"
+            ]
+        ]
+    },
+    {
+        "id": "0a2a8c300fbe892c",
+        "type": "link in",
+        "z": "e6da46131ceed4fb",
+        "name": "chatgpt_in",
+        "links": [],
+        "x": 55,
+        "y": 160,
+        "wires": [
+            [
+                "a86e4dd004486738"
+            ]
+        ]
+    },
+    {
+        "id": "ee232ed4b483a468",
+        "type": "link out",
+        "z": "e6da46131ceed4fb",
+        "name": "chatgpt_out",
+        "mode": "return",
+        "links": [],
+        "x": 715,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "7627281c058b8a40",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.choices[0].message.content",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 280,
+        "wires": [
+            [
+                "d821f5e73ad30717"
+            ]
+        ]
+    },
+    {
+        "id": "a86e4dd004486738",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "Change model config",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gpt_config.model",
+                "pt": "msg",
+                "to": "gpt-3.5-turbo",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.system",
+                "pt": "msg",
+                "to": "You are the perfect chatbot for the shop customer. Respond in maximum 25 words in english.",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.temperature",
+                "pt": "msg",
+                "to": "1",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.top_p",
+                "pt": "msg",
+                "to": "1",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.presence_penalty",
+                "pt": "msg",
+                "to": "0",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.frequency_penalty",
+                "pt": "msg",
+                "to": "0",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "gpt_config.max_tokens",
+                "pt": "msg",
+                "to": "2048",
+                "tot": "num"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 260,
+        "y": 160,
+        "wires": [
+            [
+                "4d9239f766dd1ee5"
+            ]
+        ]
+    },
+    {
+        "id": "9b5be63de486af3c",
+        "type": "comment",
+        "z": "e6da46131ceed4fb",
+        "name": "[Link]Chat API Reference ",
+        "info": "https://platform.openai.com/docs/api-reference/chat/create\n\nhttps://platform.openai.com/docs/guides/chat/introduction",
+        "x": 590,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "15c9b2befc9785da",
+        "type": "comment",
+        "z": "e6da46131ceed4fb",
+        "name": "Save conversation history",
+        "info": "This will save the conversation\nhistory, input and response,\nfor the last 6 messages for\neach platform to a file.\nYou can use a database, like Postgress or\nNoSQL variants. ",
+        "x": 590,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "ee86db05dc050f8e",
+        "type": "function",
+        "z": "e6da46131ceed4fb",
+        "name": "Config chat model",
+        "func": "/* \n *  E.g. input for history\n * msg.gpt_history = [{ \"role\": \"assistant\", \"content\": \"The Los Angeles Dodgers won the World Series in 2020.\" },\n *   { \"role\": \"user\", \"content\": \"Where was it played?\" } ]\n */\n\nmsg.gpt_messages = [ { \"role\": \"system\", \"content\": msg.gpt_config.system } ];\n\nif (msg.gpt_history){\n    msg.gpt_messages = msg.gpt_messages.concat(msg.gpt_history);\n}\n\nmsg.gpt_messages = msg.gpt_messages.concat({ \"role\": \"user\", \"content\": msg.payload });\n\nmsg.payload =\n{\n    \"model\": msg.gpt_config.model,\n    \"messages\": msg.gpt_messages,\n    \"temperature\": msg.gpt_config.temperature,\n    \"top_p\": msg.gpt_config.top_p,\n    \"presence_penalty\": msg.gpt_config.presence_penalty,\n    \"frequency_penalty\": msg.gpt_config.frequency_penalty,\n    \"max_tokens\": msg.gpt_config.max_tokens\n}\n\ndelete (msg.gpt_config);\ndelete (msg.gpt_history);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 200,
+        "wires": [
+            [
+                "bf51565be34158ba"
+            ]
+        ]
+    },
+    {
+        "id": "eb00035c36ac739f",
+        "type": "switch",
+        "z": "e6da46131ceed4fb",
+        "name": "Check if RedBot or WhatsApp personal",
+        "property": "originalMessage",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "hask",
+                "v": "chatId",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 260,
+        "y": 480,
+        "wires": [
+            [
+                "e7f70d3b76fd56f9"
+            ],
+            [
+                "4fa4c728be999a0f"
+            ]
+        ]
+    },
+    {
+        "id": "e7f70d3b76fd56f9",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "saveID",
+                "pt": "msg",
+                "to": "originalMessage.chatId",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 540,
+        "y": 460,
+        "wires": [
+            [
+                "1fb6c955238349a9"
+            ]
+        ]
+    },
+    {
+        "id": "4fa4c728be999a0f",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "saveID",
+                "pt": "msg",
+                "to": "chatID",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 540,
+        "y": 500,
+        "wires": [
+            [
+                "1fb6c955238349a9"
+            ]
+        ]
+    },
+    {
+        "id": "1fb6c955238349a9",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "filename",
+                "pt": "msg",
+                "to": "\"/data/chat_save/\" & saveID & \".json\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 750,
+        "y": 480,
+        "wires": [
+            [
+                "5c1c0ced602a4506"
+            ]
+        ]
+    },
+    {
+        "id": "d821f5e73ad30717",
+        "type": "switch",
+        "z": "e6da46131ceed4fb",
+        "name": "Status code 200",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 500,
+        "y": 320,
+        "wires": [
+            [
+                "ee232ed4b483a468",
+                "ea69b2ae2fb4ecc0"
+            ],
+            [
+                "f05579cea6eddee7"
+            ]
+        ]
+    },
+    {
+        "id": "f05579cea6eddee7",
+        "type": "debug",
+        "z": "e6da46131ceed4fb",
+        "name": "API Error",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "dd3306028f512ae0",
+        "type": "link in",
+        "z": "e6da46131ceed4fb",
+        "name": "gpt_history_in",
+        "links": [
+            "4d9239f766dd1ee5"
+        ],
+        "x": 55,
+        "y": 440,
+        "wires": [
+            [
+                "57cbe5d7e145265a"
+            ]
+        ]
+    },
+    {
+        "id": "05ea0c20ec7661be",
+        "type": "comment",
+        "z": "e6da46131ceed4fb",
+        "name": "Check if history exist",
+        "info": "Verify if a file with the specific saveID exist.",
+        "x": 570,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "5c1c0ced602a4506",
+        "type": "file in",
+        "z": "e6da46131ceed4fb",
+        "name": "Get conversation",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 770,
+        "y": 520,
+        "wires": [
+            [
+                "f9fbd684daf9ee90"
+            ]
+        ]
+    },
+    {
+        "id": "f9fbd684daf9ee90",
+        "type": "json",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 830,
+        "y": 560,
+        "wires": [
+            [
+                "37211b0a377a4b0e"
+            ]
+        ]
+    },
+    {
+        "id": "08d23a700481c2d0",
+        "type": "function",
+        "z": "e6da46131ceed4fb",
+        "name": "Save current and last N",
+        "func": "/* \n * Save the current response and delete older than N limit\n */\n//Remove first array element, \"role\":\"system\"\nmsg.gpt_messages.shift();\nvar gpt_response = [{ \"role\": \"assistant\", \"content\": msg.payload }]; \nvar current_conversation = msg.gpt_messages.concat(gpt_response);\n//Get the last N from history\ncurrent_conversation = current_conversation.slice(-(msg.maximum_histroy * 2));\nmsg.payload = current_conversation;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 660,
+        "wires": [
+            [
+                "10b56afb812da49f"
+            ]
+        ]
+    },
+    {
+        "id": "57cbe5d7e145265a",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gpt_asked",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 440,
+        "wires": [
+            [
+                "eb00035c36ac739f"
+            ]
+        ]
+    },
+    {
+        "id": "10b56afb812da49f",
+        "type": "file",
+        "z": "e6da46131ceed4fb",
+        "name": "Save conversation",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 710,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8048cf0539ac4f55",
+        "type": "link out",
+        "z": "e6da46131ceed4fb",
+        "name": "gpt_history_out",
+        "mode": "link",
+        "links": [
+            "81c7c2f4545507e7"
+        ],
+        "x": 1105,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "4d9239f766dd1ee5",
+        "type": "link out",
+        "z": "e6da46131ceed4fb",
+        "name": "chatgpt_out",
+        "mode": "link",
+        "links": [
+            "dd3306028f512ae0"
+        ],
+        "x": 405,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "81c7c2f4545507e7",
+        "type": "link in",
+        "z": "e6da46131ceed4fb",
+        "name": "link in 1",
+        "links": [
+            "8048cf0539ac4f55"
+        ],
+        "x": 235,
+        "y": 200,
+        "wires": [
+            [
+                "ee86db05dc050f8e"
+            ]
+        ]
+    },
+    {
+        "id": "37211b0a377a4b0e",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gpt_history",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "gpt_asked",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 820,
+        "y": 600,
+        "wires": [
+            [
+                "8048cf0539ac4f55"
+            ]
+        ]
+    },
+    {
+        "id": "00b3fd403c2f6aac",
+        "type": "comment",
+        "z": "e6da46131ceed4fb",
+        "name": "Call the ChatGPT API",
+        "info": "",
+        "x": 580,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "e0e0c2930abdfb07",
+        "type": "link in",
+        "z": "e6da46131ceed4fb",
+        "name": "gpt_history_save_in",
+        "links": [
+            "ea69b2ae2fb4ecc0"
+        ],
+        "x": 55,
+        "y": 660,
+        "wires": [
+            [
+                "f3b2ddeeb67dcdc6"
+            ]
+        ]
+    },
+    {
+        "id": "ea69b2ae2fb4ecc0",
+        "type": "link out",
+        "z": "e6da46131ceed4fb",
+        "name": "chatgpt_out",
+        "mode": "link",
+        "links": [
+            "e0e0c2930abdfb07"
+        ],
+        "x": 715,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "fa2a85103c4924fb",
+        "type": "catch",
+        "z": "e6da46131ceed4fb",
+        "name": "If file not found",
+        "scope": [
+            "5c1c0ced602a4506"
+        ],
+        "uncaught": false,
+        "x": 980,
+        "y": 520,
+        "wires": [
+            [
+                "8048cf0539ac4f55"
+            ]
+        ]
+    },
+    {
+        "id": "f3b2ddeeb67dcdc6",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "maximum_histroy",
+                "pt": "msg",
+                "to": "6",
+                "tot": "num"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 210,
+        "y": 660,
+        "wires": [
+            [
+                "08d23a700481c2d0"
+            ]
+        ]
+    },
+    {
+        "id": "88698f105ae398f1",
+        "type": "http request",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.openai.com/v1/images/generations",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "bearer",
+        "senderr": false,
+        "headers": [],
+        "x": 290,
+        "y": 900,
+        "wires": [
+            [
+                "4fd1ba17724cc32f"
+            ]
+        ]
+    },
+    {
+        "id": "24112cb41f1f983f",
+        "type": "template",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "json",
+        "syntax": "mustache",
+        "template": "{\n  \"prompt\": \"{{payload.img_prompt}}\",\n  \"n\": 1,\n  \"size\": \"{{payload.resolution}}\"\n}",
+        "output": "json",
+        "x": 260,
+        "y": 860,
+        "wires": [
+            [
+                "88698f105ae398f1"
+            ]
+        ]
+    },
+    {
+        "id": "da0254b711276bdc",
+        "type": "image",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "width": 160,
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": true,
+        "pass": false,
+        "outputs": 0,
+        "x": 360,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "2cfdfff15961b9d6",
+        "type": "inject",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "props": [
+            {
+                "p": "payload.img_prompt",
+                "v": "A cute cat.",
+                "vt": "str"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 780,
+        "wires": [
+            [
+                "1e8787cff0ccfe81"
+            ]
+        ]
+    },
+    {
+        "id": "4fd1ba17724cc32f",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.data[0].url",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 320,
+        "y": 940,
+        "wires": [
+            [
+                "da0254b711276bdc",
+                "5268a38e5582c90e"
+            ]
+        ]
+    },
+    {
+        "id": "982664b0a0fd715a",
+        "type": "comment",
+        "z": "e6da46131ceed4fb",
+        "name": "Bonus: create image with \"dall-e-2\" and send it",
+        "info": "",
+        "x": 650,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "cc9b2b14ee514bbe",
+        "type": "link in",
+        "z": "e6da46131ceed4fb",
+        "name": "openai_dalle_in",
+        "links": [],
+        "x": 55,
+        "y": 820,
+        "wires": [
+            [
+                "1e8787cff0ccfe81"
+            ]
+        ]
+    },
+    {
+        "id": "1e8787cff0ccfe81",
+        "type": "change",
+        "z": "e6da46131ceed4fb",
+        "name": "Set resolution",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.resolution",
+                "pt": "msg",
+                "to": "256x256",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 220,
+        "y": 820,
+        "wires": [
+            [
+                "24112cb41f1f983f"
+            ]
+        ]
+    },
+    {
+        "id": "5268a38e5582c90e",
+        "type": "link out",
+        "z": "e6da46131ceed4fb",
+        "name": "openai_dalle_out",
+        "mode": "return",
+        "links": [],
+        "x": 495,
+        "y": 940,
+        "wires": []
+    }
+]

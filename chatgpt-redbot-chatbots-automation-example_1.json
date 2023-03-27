@@ -1,0 +1,758 @@
+[
+    {
+        "id": "9991a72588754b12",
+        "type": "tab",
+        "label": "OpenAI Chatbot",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "3a263fec8ca467c6",
+        "type": "chatbot-telegram-receive",
+        "z": "9991a72588754b12",
+        "bot": "2c5102c4bbe71250",
+        "botProduction": "",
+        "x": 130,
+        "y": 60,
+        "wires": [
+            [
+                "60e7f8731afb5f80"
+            ]
+        ]
+    },
+    {
+        "id": "632d01914b2d6ba7",
+        "type": "chatbot-telegram-send",
+        "z": "9991a72588754b12",
+        "bot": "2c5102c4bbe71250",
+        "botProduction": "",
+        "track": false,
+        "passThrough": false,
+        "errorOutput": false,
+        "outputs": 0,
+        "x": 690,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "81727d65b1fdecba",
+        "type": "chatbot-conversation",
+        "z": "9991a72588754b12",
+        "name": "",
+        "botDevelopment": "2c5102c4bbe71250",
+        "botProduction": "",
+        "chatId": "",
+        "userId": "",
+        "transport": "telegram",
+        "x": 470,
+        "y": 160,
+        "wires": [
+            [
+                "632d01914b2d6ba7"
+            ]
+        ]
+    },
+    {
+        "id": "35a3ffb5c4e67730",
+        "type": "chatbot-facebook-receive",
+        "z": "9991a72588754b12",
+        "bot": "560632cf62e82692",
+        "botProduction": "",
+        "x": 130,
+        "y": 260,
+        "wires": [
+            [
+                "679888811fca2f99"
+            ]
+        ]
+    },
+    {
+        "id": "e37fb62d8f204d23",
+        "type": "chatbot-facebook-send",
+        "z": "9991a72588754b12",
+        "bot": "560632cf62e82692",
+        "botProduction": "",
+        "track": false,
+        "passThrough": false,
+        "errorOutput": false,
+        "outputs": 0,
+        "x": 700,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "6451b6778b87d0da",
+        "type": "chatbot-conversation",
+        "z": "9991a72588754b12",
+        "name": "",
+        "botDevelopment": "560632cf62e82692",
+        "botProduction": "",
+        "chatId": "",
+        "userId": "",
+        "transport": "facebook",
+        "x": 470,
+        "y": 320,
+        "wires": [
+            [
+                "e37fb62d8f204d23"
+            ]
+        ]
+    },
+    {
+        "id": "7901e1b568ba8bb5",
+        "type": "chatbot-whatsapp-receive",
+        "z": "9991a72588754b12",
+        "bot": "",
+        "botProduction": "",
+        "x": 130,
+        "y": 400,
+        "wires": [
+            [
+                "dd99fc5ecb7dc003"
+            ]
+        ]
+    },
+    {
+        "id": "9d074b19352c1e58",
+        "type": "chatbot-whatsapp-send",
+        "z": "9991a72588754b12",
+        "bot": "",
+        "botProduction": "",
+        "track": false,
+        "passThrough": false,
+        "errorOutput": false,
+        "outputs": 0,
+        "x": 690,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "d81f94b4472d5357",
+        "type": "chatbot-conversation",
+        "z": "9991a72588754b12",
+        "name": "",
+        "botDevelopment": "",
+        "botProduction": "",
+        "chatId": "",
+        "userId": "",
+        "transport": "",
+        "x": 470,
+        "y": 460,
+        "wires": [
+            [
+                "9d074b19352c1e58"
+            ]
+        ]
+    },
+    {
+        "id": "2a74378f887fb3ad",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "str(chatId)",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.chatId",
+                "pt": "msg",
+                "to": "$string(msg.payload.chatId)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 240,
+        "y": 160,
+        "wires": [
+            [
+                "81727d65b1fdecba"
+            ]
+        ]
+    },
+    {
+        "id": "ac59238d2028057e",
+        "type": "admin",
+        "z": "9991a72588754b12",
+        "name": "WA Admin",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "x": 590,
+        "y": 680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "89d412a030fc482f",
+        "type": "chats-in",
+        "z": "9991a72588754b12",
+        "name": "Chats In",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "whatsappLiteevent": "messages.upsert",
+        "whatsappWebevent": "message",
+        "x": 160,
+        "y": 540,
+        "wires": [
+            [
+                "cf13ae5fd2302550"
+            ]
+        ]
+    },
+    {
+        "id": "d219a54611710c6d",
+        "type": "chats-out",
+        "z": "9991a72588754b12",
+        "name": "Chats Out",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "number": "",
+        "x": 600,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "cf13ae5fd2302550",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "Set replay number",
+        "rules": [
+            {
+                "t": "set",
+                "p": "toNumber",
+                "pt": "msg",
+                "to": "from",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 150,
+        "y": 600,
+        "wires": [
+            [
+                "0fd9e106fb644271"
+            ]
+        ]
+    },
+    {
+        "id": "4b93149e8af14ee5",
+        "type": "chatbot-message",
+        "z": "9991a72588754b12",
+        "name": "",
+        "message": [],
+        "language": "none",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "2a74378f887fb3ad"
+            ]
+        ]
+    },
+    {
+        "id": "752c76214e00a83e",
+        "type": "chatbot-message",
+        "z": "9991a72588754b12",
+        "name": "",
+        "message": [],
+        "language": "none",
+        "x": 190,
+        "y": 320,
+        "wires": [
+            [
+                "6451b6778b87d0da"
+            ]
+        ]
+    },
+    {
+        "id": "670d33f5fcdfe29e",
+        "type": "chatbot-message",
+        "z": "9991a72588754b12",
+        "name": "",
+        "message": [],
+        "language": "none",
+        "x": 190,
+        "y": 460,
+        "wires": [
+            [
+                "d81f94b4472d5357"
+            ]
+        ]
+    },
+    {
+        "id": "bf51565be34158ba",
+        "type": "http request",
+        "z": "9991a72588754b12",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "bearer",
+        "senderr": false,
+        "headers": [],
+        "x": 330,
+        "y": 800,
+        "wires": [
+            [
+                "7627281c058b8a40"
+            ]
+        ]
+    },
+    {
+        "id": "50c6e0acc962b414",
+        "type": "template",
+        "z": "9991a72588754b12",
+        "name": "Config chat model",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "json",
+        "syntax": "mustache",
+        "template": "{\n  \"model\": \"gpt-3.5-turbo\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"{{payload}}\"}],\n  \"temperature\": 1,\n  \"top_p\": 1,\n  \"presence_penalty\": 0,\n  \"frequency_penalty\": 0,\n  \"max_tokens\": 2048\n}",
+        "output": "json",
+        "x": 270,
+        "y": 760,
+        "wires": [
+            [
+                "bf51565be34158ba"
+            ]
+        ]
+    },
+    {
+        "id": "7efe3e431a7e6d00",
+        "type": "template",
+        "z": "9991a72588754b12",
+        "name": "Message",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "Hello bot!",
+        "output": "str",
+        "x": 180,
+        "y": 720,
+        "wires": [
+            [
+                "50c6e0acc962b414"
+            ]
+        ]
+    },
+    {
+        "id": "c31cc49404b315e8",
+        "type": "inject",
+        "z": "9991a72588754b12",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 680,
+        "wires": [
+            [
+                "7efe3e431a7e6d00"
+            ]
+        ]
+    },
+    {
+        "id": "0a2a8c300fbe892c",
+        "type": "link in",
+        "z": "9991a72588754b12",
+        "name": "chatgpt_in",
+        "links": [
+            "0fd9e106fb644271",
+            "95f61719997b5aba",
+            "b283846d28a4775d",
+            "cc826a8c39ce99e5"
+        ],
+        "x": 95,
+        "y": 760,
+        "wires": [
+            [
+                "50c6e0acc962b414"
+            ]
+        ]
+    },
+    {
+        "id": "ee232ed4b483a468",
+        "type": "link out",
+        "z": "9991a72588754b12",
+        "name": "chatgpt_out",
+        "mode": "link",
+        "links": [
+            "87a8331d0156dada",
+            "e3a8054e02357181",
+            "d3b4a99d902d040d",
+            "c2c2bff57c07a168"
+        ],
+        "x": 525,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "87a8331d0156dada",
+        "type": "link in",
+        "z": "9991a72588754b12",
+        "name": "link in 1",
+        "links": [
+            "ee232ed4b483a468"
+        ],
+        "x": 485,
+        "y": 600,
+        "wires": [
+            [
+                "d219a54611710c6d"
+            ]
+        ]
+    },
+    {
+        "id": "0fd9e106fb644271",
+        "type": "link out",
+        "z": "9991a72588754b12",
+        "name": "link out 1",
+        "mode": "link",
+        "links": [
+            "0a2a8c300fbe892c"
+        ],
+        "x": 305,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "7627281c058b8a40",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.choices[0].message.content",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 840,
+        "wires": [
+            [
+                "ee232ed4b483a468"
+            ]
+        ]
+    },
+    {
+        "id": "95f61719997b5aba",
+        "type": "link out",
+        "z": "9991a72588754b12",
+        "name": "link out 2",
+        "mode": "link",
+        "links": [
+            "0a2a8c300fbe892c"
+        ],
+        "x": 465,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "60e7f8731afb5f80",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.content",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 60,
+        "wires": [
+            [
+                "95f61719997b5aba"
+            ]
+        ]
+    },
+    {
+        "id": "e3a8054e02357181",
+        "type": "link in",
+        "z": "9991a72588754b12",
+        "name": "link in 2",
+        "links": [
+            "ee232ed4b483a468"
+        ],
+        "x": 545,
+        "y": 60,
+        "wires": [
+            [
+                "48e25994614950f6"
+            ]
+        ]
+    },
+    {
+        "id": "48e25994614950f6",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "message",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 670,
+        "y": 60,
+        "wires": [
+            [
+                "4b93149e8af14ee5"
+            ]
+        ]
+    },
+    {
+        "id": "cc826a8c39ce99e5",
+        "type": "link out",
+        "z": "9991a72588754b12",
+        "name": "link out 3",
+        "mode": "link",
+        "links": [
+            "0a2a8c300fbe892c"
+        ],
+        "x": 465,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "679888811fca2f99",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.content",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 260,
+        "wires": [
+            [
+                "cc826a8c39ce99e5"
+            ]
+        ]
+    },
+    {
+        "id": "d3b4a99d902d040d",
+        "type": "link in",
+        "z": "9991a72588754b12",
+        "name": "link in 3",
+        "links": [
+            "ee232ed4b483a468"
+        ],
+        "x": 545,
+        "y": 260,
+        "wires": [
+            [
+                "088da4ef4acc3dd1"
+            ]
+        ]
+    },
+    {
+        "id": "088da4ef4acc3dd1",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "message",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 670,
+        "y": 260,
+        "wires": [
+            [
+                "752c76214e00a83e"
+            ]
+        ]
+    },
+    {
+        "id": "b283846d28a4775d",
+        "type": "link out",
+        "z": "9991a72588754b12",
+        "name": "link out 4",
+        "mode": "link",
+        "links": [
+            "0a2a8c300fbe892c"
+        ],
+        "x": 465,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "dd99fc5ecb7dc003",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.content",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 400,
+        "wires": [
+            [
+                "b283846d28a4775d"
+            ]
+        ]
+    },
+    {
+        "id": "c2c2bff57c07a168",
+        "type": "link in",
+        "z": "9991a72588754b12",
+        "name": "link in 4",
+        "links": [
+            "ee232ed4b483a468"
+        ],
+        "x": 545,
+        "y": 400,
+        "wires": [
+            [
+                "0f2c236107109931"
+            ]
+        ]
+    },
+    {
+        "id": "0f2c236107109931",
+        "type": "change",
+        "z": "9991a72588754b12",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "message",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 670,
+        "y": 400,
+        "wires": [
+            [
+                "670d33f5fcdfe29e"
+            ]
+        ]
+    },
+    {
+        "id": "2c5102c4bbe71250",
+        "type": "chatbot-telegram-node",
+        "botname": "TahityBot",
+        "usernames": "",
+        "polling": "1000",
+        "store": "",
+        "log": "",
+        "debug": false,
+        "skipMediaFiles": false,
+        "webHook": "",
+        "connectMode": "polling",
+        "storeMessages": true,
+        "enableMissionControl": false,
+        "inspectMessages": true,
+        "chatbotId": ""
+    },
+    {
+        "id": "560632cf62e82692",
+        "type": "chatbot-facebook-node",
+        "botname": "Messenger",
+        "usernames": "",
+        "store": "",
+        "log": "",
+        "debug": false,
+        "multiWebHook": false,
+        "profileFields": "first_name,last_name",
+        "storeMessages": true,
+        "enableMissionControl": false,
+        "inspectMessages": true,
+        "chatbotId": ""
+    },
+    {
+        "id": "dcaa1c3a26ef76d4",
+        "type": "whatsappLink",
+        "cName": "whatsapp-web",
+        "name": "Web",
+        "clientType": "waSocketClient",
+        "onlineStatus": true,
+        "loopTime": "5"
+    }
+]

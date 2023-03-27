@@ -1,0 +1,253 @@
+[
+    {
+        "id": "4370517eccea40e5",
+        "type": "tab",
+        "label": "WhatsApp bot",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fb4a62aa73a3363c",
+        "type": "admin",
+        "z": "4370517eccea40e5",
+        "name": "WA Admin",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "x": 170,
+        "y": 1120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a695d61574a6f685",
+        "type": "chats-in",
+        "z": "4370517eccea40e5",
+        "name": "Chats In",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "whatsappLiteevent": "messages.upsert",
+        "whatsappWebevent": "message",
+        "x": 180,
+        "y": 920,
+        "wires": [
+            [
+                "fab9d579c6b1af68"
+            ]
+        ]
+    },
+    {
+        "id": "4f7e2730673aa3ca",
+        "type": "chats-out",
+        "z": "4370517eccea40e5",
+        "name": "Chats Out",
+        "whatsappLink": "dcaa1c3a26ef76d4",
+        "number": "",
+        "x": 900,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "fab9d579c6b1af68",
+        "type": "change",
+        "z": "4370517eccea40e5",
+        "name": "Set replay number",
+        "rules": [
+            {
+                "t": "set",
+                "p": "toNumber",
+                "pt": "msg",
+                "to": "from",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 370,
+        "y": 920,
+        "wires": [
+            [
+                "83f0e75e78a8013e",
+                "7d69d5ce7850ed4c"
+            ]
+        ]
+    },
+    {
+        "id": "9017a32f07c16736",
+        "type": "template",
+        "z": "4370517eccea40e5",
+        "name": "Default",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "text",
+        "syntax": "plain",
+        "template": "Type \"Help!\" if you want to see buttons. ",
+        "output": "str",
+        "x": 700,
+        "y": 960,
+        "wires": [
+            [
+                "4f7e2730673aa3ca"
+            ]
+        ]
+    },
+    {
+        "id": "7d69d5ce7850ed4c",
+        "type": "switch",
+        "z": "4370517eccea40e5",
+        "name": "Buttons",
+        "property": "message.buttonsResponseMessage.selectedButtonId",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "products",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "options",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "anything",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 560,
+        "y": 1040,
+        "wires": [
+            [
+                "310b15ef23752a4b"
+            ],
+            [
+                "acbb73fea978000a"
+            ],
+            [
+                "ad2313727e436c53"
+            ]
+        ]
+    },
+    {
+        "id": "6060858df42c6580",
+        "type": "template",
+        "z": "4370517eccea40e5",
+        "name": "Help!",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "json",
+        "syntax": "plain",
+        "template": "{\n    \"text\": \"This is a menu.\",\n    \"footer\": \"Nice menu!\",\n    \"headerType\": 1,\n    \"buttons\": [\n        {\"buttonId\": \"products\", \"buttonText\": {\"displayText\": \"Products\"}, \"type\": 1},\n        {\"buttonId\": \"options\", \"buttonText\": {\"displayText\": \"Options\"}, \"type\": 1},\n        {\"buttonId\": \"anything\", \"buttonText\": {\"displayText\": \"Anything\"}, \"type\": 1}\n    ]\n}",
+        "output": "json",
+        "x": 710,
+        "y": 920,
+        "wires": [
+            [
+                "4f7e2730673aa3ca"
+            ]
+        ]
+    },
+    {
+        "id": "310b15ef23752a4b",
+        "type": "template",
+        "z": "4370517eccea40e5",
+        "name": "Products",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "text",
+        "syntax": "plain",
+        "template": "Here's a list of products:\n- Jacket\n- Phone\n- Flying duck 🦆",
+        "output": "str",
+        "x": 700,
+        "y": 1000,
+        "wires": [
+            [
+                "4f7e2730673aa3ca"
+            ]
+        ]
+    },
+    {
+        "id": "acbb73fea978000a",
+        "type": "template",
+        "z": "4370517eccea40e5",
+        "name": "Options",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "plain",
+        "template": "You have many options, but not anything more here.",
+        "output": "str",
+        "x": 700,
+        "y": 1040,
+        "wires": [
+            [
+                "4f7e2730673aa3ca"
+            ]
+        ]
+    },
+    {
+        "id": "ad2313727e436c53",
+        "type": "template",
+        "z": "4370517eccea40e5",
+        "name": "Anything",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "plain",
+        "template": "Anything, just can be really anything.",
+        "output": "str",
+        "x": 700,
+        "y": 1080,
+        "wires": [
+            [
+                "4f7e2730673aa3ca"
+            ]
+        ]
+    },
+    {
+        "id": "83f0e75e78a8013e",
+        "type": "switch",
+        "z": "4370517eccea40e5",
+        "name": "Want help",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "Help",
+                "vt": "str"
+            },
+            {
+                "t": "nempty"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 2,
+        "x": 560,
+        "y": 920,
+        "wires": [
+            [
+                "6060858df42c6580"
+            ],
+            [
+                "9017a32f07c16736"
+            ]
+        ]
+    },
+    {
+        "id": "dcaa1c3a26ef76d4",
+        "type": "whatsappLink",
+        "cName": "whatsapp-web",
+        "name": "Web",
+        "clientType": "waSocketClient",
+        "onlineStatus": true,
+        "loopTime": "5"
+    }
+]
