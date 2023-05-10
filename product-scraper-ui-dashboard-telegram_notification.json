@@ -1,0 +1,3166 @@
+[
+    {
+        "id": "814f8b512858eb23",
+        "type": "tab",
+        "label": "Product scraper: scraping",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f3064c5413b6aff5",
+        "type": "http request",
+        "z": "814f8b512858eb23",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 190,
+        "y": 80,
+        "wires": [
+            [
+                "ccfc3bc7fb606700"
+            ]
+        ]
+    },
+    {
+        "id": "6475c1bfa07db68b",
+        "type": "debug",
+        "z": "814f8b512858eb23",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "d906029dc6317770",
+        "type": "comment",
+        "z": "814f8b512858eb23",
+        "name": "Scrape a product and insert in the database",
+        "info": "",
+        "x": 190,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ccfc3bc7fb606700",
+        "type": "switch",
+        "z": "814f8b512858eb23",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 230,
+        "y": 120,
+        "wires": [
+            [
+                "668c74ac022971dd"
+            ],
+            [
+                "6475c1bfa07db68b",
+                "3cdd876e04298001"
+            ]
+        ]
+    },
+    {
+        "id": "96a2566d84399f84",
+        "type": "function",
+        "z": "814f8b512858eb23",
+        "name": "Set sql params",
+        "func": "let product = msg.payload\nmsg.params = {\n    $title: product.title,\n    $review: product.review,\n    $orPrice: product.orPrice,\n    $price: product.price,\n    $rePrice: product.rePrice,\n    $code: product.code,\n    $url: product.url,\n    $img: product.img,\n    $timestamp: Date.now()\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 200,
+        "wires": [
+            [
+                "3ef1fe3e78a69e52"
+            ]
+        ]
+    },
+    {
+        "id": "3ef1fe3e78a69e52",
+        "type": "sqlite",
+        "z": "814f8b512858eb23",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO products (title, review, orPrice, price, rePrice, code, url, img, timestamp) \nVALUES ($title, $review, $orPrice, $price, $rePrice, $code, $url, $img, $timestamp)",
+        "name": "Insert product to db",
+        "x": 330,
+        "y": 240,
+        "wires": [
+            [
+                "13d18e36c24aa8b9",
+                "c94cb2b4c95490fd"
+            ]
+        ]
+    },
+    {
+        "id": "d612eb153492e4ee",
+        "type": "link in",
+        "z": "814f8b512858eb23",
+        "name": "Scrape and insert product",
+        "links": [
+            "80fa645b3029aba8",
+            "7864a1323f5cb64a"
+        ],
+        "x": 75,
+        "y": 80,
+        "wires": [
+            [
+                "f3064c5413b6aff5"
+            ]
+        ]
+    },
+    {
+        "id": "13d18e36c24aa8b9",
+        "type": "link out",
+        "z": "814f8b512858eb23",
+        "name": "Scrape and insert product output",
+        "mode": "return",
+        "links": [],
+        "x": 485,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "668c74ac022971dd",
+        "type": "cheerio-function",
+        "z": "814f8b512858eb23",
+        "name": "",
+        "func": "function priceFloatParse(textPrice) {\n    // Remove currency ' Lei' at the end\n    textPrice = textPrice.replace(\" Lei\", \"\")\n    // Note: you don't need to do next two steps \n    // if your price is already in the e.g. en-US format\n    // Remove integers separator '.'\n    textPrice = textPrice.replace(\".\", \"\")\n    // Convert decimal separator from Romanian format ',' to '.'\n    textPrice = textPrice.replace(\",\", \".\")\n    return parseFloat(textPrice)\n}\n\nlet product = {}\nproduct.title = $('h1.page-title').text().trim()\nproduct.review = $('div.feedback-rating-2 a.rating-text')\nif (product.review && product.review.text()){\n    product.review = product.review.text().trim().match(/(\\d.+)/)[0]\n    product.review = parseFloat(product.review)\n} else { product.review = -1 }\nproduct.orPrice = $('div.pricing-block p.pricing.rrp-lp30d span')\nif (product.orPrice && product.orPrice.text()) { \n    product.orPrice = product.orPrice.contents().text().trim().match(/\\d.+/)[0] \n    product.orPrice = priceFloatParse(product.orPrice)\n} \nelse { product.orPrice = -1 }\nproduct.price = $('div.pricing-block p.product-new-price')\nif (product.price && product.price.text()) {\n    product.price = product.price.first().contents().text()\n    product.price = priceFloatParse(product.price)\n}\nelse { product.price = -1 }\nproduct.rePrice = $('div.alternative-panel-resealed-box p.product-new-price')\nif (product.rePrice && product.rePrice.text()) {\n    product.rePrice = product.rePrice.contents().text()\n    product.rePrice = priceFloatParse(product.rePrice)\n}\nelse { product.rePrice = -1 }\nproduct.code = $('span.product-code-display').text().trim().match(/(?<=: ).*/)[0]\nproduct.url = msg.url\nproduct.img = $('div.product-gallery-wrapper.product-gallery-www div.thumbnail-wrapper img').attr('src')\nmsg.payload = product\nreturn msg;",
+        "outputs": 1,
+        "noerr": 8,
+        "x": 280,
+        "y": 160,
+        "wires": [
+            [
+                "96a2566d84399f84"
+            ]
+        ]
+    },
+    {
+        "id": "2a454cf4ccb65d8a",
+        "type": "link out",
+        "z": "814f8b512858eb23",
+        "name": "Scrape product error out",
+        "mode": "link",
+        "links": [],
+        "x": 625,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "3cdd876e04298001",
+        "type": "change",
+        "z": "814f8b512858eb23",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "error.source.name",
+                "pt": "msg",
+                "to": "scraper_statusCode",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "error.message",
+                "pt": "msg",
+                "to": "There was a problem at accesing the web page.",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 500,
+        "y": 160,
+        "wires": [
+            [
+                "2a454cf4ccb65d8a"
+            ]
+        ]
+    },
+    {
+        "id": "c94cb2b4c95490fd",
+        "type": "link out",
+        "z": "814f8b512858eb23",
+        "name": "Scrape and insert product output - trigger",
+        "mode": "link",
+        "links": [
+            "e46774be9bd41590"
+        ],
+        "x": 485,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "ae6680992ac0af08",
+        "type": "tab",
+        "label": "Product scraper: interface",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "0e5c2a1510cd31f7",
+        "type": "ui_form",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "label": "Add product",
+        "group": "13c0363b.95162a",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Product URL to scrape",
+                "value": "url",
+                "type": "text",
+                "required": true,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "url": ""
+        },
+        "payload": "",
+        "submit": "Add",
+        "cancel": "Reset",
+        "topic": "",
+        "topicType": "str",
+        "splitLayout": false,
+        "className": "",
+        "x": 130,
+        "y": 720,
+        "wires": [
+            [
+                "51eb6589dcf79a17"
+            ]
+        ]
+    },
+    {
+        "id": "270b39b9f3a8cf79",
+        "type": "ui_template",
+        "z": "ae6680992ac0af08",
+        "group": "e1efb934.043c38",
+        "name": "Show product list",
+        "order": 1,
+        "width": 18,
+        "height": 6,
+        "format": "<md-list>\n    <md-list-item ng-repeat=\"(key, msg) in msg.payload\" class=\"noright\" style=\"margin:15px;\">\n        <img ng-if=\"msg.title\" ng-src=\"{{ msg.img }}\" flex = 15 class=\"ng-scope\"/>\n        <div ng-if=\"!msg.title\" layout=\"row\" layout-sm=\"column\" flex = 15 layout-align=\"space-around\">\n                <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n        </div>\n        <div layout=\"column\" flex=70 style=\"margin:0 10px;\">\n            <md-truncate>\n                <p>{{ msg.title || \"Loading ...\"}} </p>\n                <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\" style=\"width:400px;white-space: pre-line;  height: auto;\">{{ msg.title }}</md-tooltip>\n            </md-truncate>\n            <md-chips ng-if=\"msg.title\" input-aria-label=\"Product data\" input-aria-describedby=\"staticChipsNote\">\n                <md-chip>{{ msg.review > 0 ? msg.review : \"No review\"}}\n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Review score</md-tooltip>\n                </md-chip>\n                <md-chip>{{ msg.orPrice > 0 ? msg.orPrice : \"No price\"}}\n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Initial price</md-tooltip>\n                </md-chip>\n                <md-chip style=\"border: 2px solid #c50f0f;\">{{ msg.price > 0 ? msg.price : \"No price\"}}                 \n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Sale price</md-tooltip>\n                </md-chip>\n                <md-chip style=\"border: 2px solid #046404;\">{{ msg.rePrice > 0 ? msg.rePrice : \"No resealed\" }}\n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Resealed price</md-tooltip>\n                </md-chip>\n                <md-chip>{{ msg.timestamp }}\n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Last update</md-tooltip>\n                </md-chip>\n                <md-chip>{{ msg.domain }}\n                    <md-tooltip md-direction=\"bottom\" md-autohide=\"true\" md-delay=\"350\">Sell by</md-tooltip>\n                </md-chip>\n            </md-chips>\n        </div>\n        <div ng-if=\"msg.title\" layout=\"column\" flex=15>\n            <md-button href=\"{{ msg.url }}\" target=\"_blank\" class=\"md-accent md-raised\">View</md-button>\n            <md-button id=\"btnHst-{{ msg.code }}\" ng-click=\"historyProd(msg.code)\" class=\"md-accent md-raised\">History</md-button>\n            <md-button id=\"btnDel-{{ msg.code }}\" ng-click=\"deleteProd(msg.code)\" class=\"md-warn md-raised\">{{ delBtnTxt }}</md-button>\n        </div>\n    </md-list-item>\n<md-list>\n    \n<script>\n(function(scope) {\n    scope.delBtnTxt = \"Delete\";\n    btnCnt = {}\n    scope.deleteProd = function(key){\n        if(btnCnt[key]){\n            btnCnt[key] ++;\n        }\n        else{\n            btnCnt[key] = 1;\n        }\n        delBtn = document.getElementById(\"btnDel-\"+key);\n        if(btnCnt[key] == 1){\n            delBtn.innerHTML = \"Confirm ?\";\n        }\n        if(btnCnt[key] == 2){\n            delBtn.innerHTML = \"Deleting ...\";\n            message = {\"to_del\" : key };\n            scope.send(message);\n        }\n    }\n\n    scope.historyProd = function(key){\n        message = {\"history\" : key };\n        scope.send(message);\n    }\n })(scope);\n</script> ",
+        "storeOutMessages": false,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 330,
+        "y": 200,
+        "wires": [
+            [
+                "61c6310e8d6c1898"
+            ]
+        ]
+    },
+    {
+        "id": "c3dd9f2be511c04a",
+        "type": "ui_button",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "group": "e1efb934.043c38",
+        "order": 2,
+        "width": 8,
+        "height": 1,
+        "passthru": false,
+        "label": "Get products from database",
+        "tooltip": "Load the products into the product list.",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "",
+        "topicType": "str",
+        "x": 180,
+        "y": 80,
+        "wires": [
+            [
+                "f59c8b6d95a9527f"
+            ]
+        ]
+    },
+    {
+        "id": "ae38eeb5547dae0f",
+        "type": "ui_text",
+        "z": "ae6680992ac0af08",
+        "group": "13c0363b.95162a",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "name": "Telegram bot URL",
+        "label": "Telegram shortcut:",
+        "format": "<a href=\"https://t.me/YOUR_BOT\" class=\"md-raised nr-dashboard-form-button md-button md-ink-ripple\">Open</a>",
+        "layout": "row-spread",
+        "className": "",
+        "x": 150,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "26d0bf3523e8d30a",
+        "type": "ui_text",
+        "z": "ae6680992ac0af08",
+        "group": "13c0363b.95162a",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Last error:",
+        "format": "{{msg.error.source.name}} - {{msg.error.message}}",
+        "layout": "row-left",
+        "className": "",
+        "x": 150,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "f59c8b6d95a9527f",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT title, review, orPrice, price, rePrice, code, img, url, timestamp \nFROM products\nGROUP BY code\nHAVING MAX(timestamp)\nORDER BY timestamp DESC;",
+        "name": "Get products from db",
+        "x": 240,
+        "y": 120,
+        "wires": [
+            [
+                "0fc93d45d34f55cc"
+            ]
+        ]
+    },
+    {
+        "id": "0fe821d7bbab45a0",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Populate the product list in interface",
+        "info": "",
+        "x": 160,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "0fc93d45d34f55cc",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Add domain and time",
+        "func": "msg.payload.forEach(function(p) {\n    p.timestamp = (new Date(p.timestamp)).toLocaleString(\"en-GB\", { timeZone: \"Europe/Bucharest\", hour: \"numeric\", minute: \"numeric\", timeZoneName: \"short\" })\n    p.domain = p.url.match(/(?:http(?:s)?:\\/\\/)?(?:w{3}\\.)?([^\\.]+)/i)[1]\n});\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 160,
+        "wires": [
+            [
+                "270b39b9f3a8cf79"
+            ]
+        ]
+    },
+    {
+        "id": "2acbc68dc67584c7",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Add URL to database",
+        "info": "",
+        "x": 120,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "b8c782c81ecacc2d",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO to_scrape (URL) VALUES ($url)",
+        "name": "Insert URL to db",
+        "x": 320,
+        "y": 880,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "51eb6589dcf79a17",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Set sql params and url",
+        "func": "msg.url = msg.payload.url\nmsg.params = {\n    $url: msg.url\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 760,
+        "wires": [
+            [
+                "68405bcc488d3e2a"
+            ]
+        ]
+    },
+    {
+        "id": "68405bcc488d3e2a",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT URL \nFROM to_scrape\nWHERE URL=($url);",
+        "name": "Get URLs from db",
+        "x": 230,
+        "y": 800,
+        "wires": [
+            [
+                "ef6642769099fe1d"
+            ]
+        ]
+    },
+    {
+        "id": "ef6642769099fe1d",
+        "type": "switch",
+        "z": "ae6680992ac0af08",
+        "name": "If URL already exists",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 260,
+        "y": 840,
+        "wires": [
+            [
+                "2ed6855a19c9d92f"
+            ],
+            [
+                "b8c782c81ecacc2d",
+                "33a7f52180eae5ef",
+                "80fa645b3029aba8"
+            ]
+        ]
+    },
+    {
+        "id": "2ed6855a19c9d92f",
+        "type": "template",
+        "z": "ae6680992ac0af08",
+        "name": "URL in db",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "The URL is already in the database.",
+        "output": "str",
+        "x": 500,
+        "y": 800,
+        "wires": [
+            [
+                "6861f96267640315"
+            ]
+        ]
+    },
+    {
+        "id": "6861f96267640315",
+        "type": "ui_text",
+        "z": "ae6680992ac0af08",
+        "group": "13c0363b.95162a",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Form status:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 650,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "33a7f52180eae5ef",
+        "type": "template",
+        "z": "ae6680992ac0af08",
+        "name": "URL added",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "URL added in database.",
+        "output": "str",
+        "x": 490,
+        "y": 840,
+        "wires": [
+            [
+                "6861f96267640315"
+            ]
+        ]
+    },
+    {
+        "id": "c5fc9bada3bb9cc5",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "There's no format validation!",
+        "info": "",
+        "x": 360,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "80fa645b3029aba8",
+        "type": "link out",
+        "z": "ae6680992ac0af08",
+        "name": "Add new URL output",
+        "mode": "link",
+        "links": [
+            "d612eb153492e4ee"
+        ],
+        "x": 545,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "2e4099dffe57bea3",
+        "type": "ui_button",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "group": "e1efb934.043c38",
+        "order": 4,
+        "width": 8,
+        "height": 1,
+        "passthru": false,
+        "label": "Scrape all products",
+        "tooltip": "Scraping the products manually",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "",
+        "topicType": "str",
+        "x": 150,
+        "y": 400,
+        "wires": [
+            [
+                "e966889308120be8"
+            ]
+        ]
+    },
+    {
+        "id": "e966889308120be8",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT URL \nFROM to_scrape",
+        "name": "Get URLs from db",
+        "x": 190,
+        "y": 440,
+        "wires": [
+            [
+                "3cf41d1faa19a730"
+            ]
+        ]
+    },
+    {
+        "id": "3cf41d1faa19a730",
+        "type": "split",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 110,
+        "y": 480,
+        "wires": [
+            [
+                "3546069f3ba75639"
+            ]
+        ]
+    },
+    {
+        "id": "3546069f3ba75639",
+        "type": "change",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "payload.URL",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 250,
+        "y": 480,
+        "wires": [
+            [
+                "a6b4453f0f504a7e"
+            ]
+        ]
+    },
+    {
+        "id": "a6b4453f0f504a7e",
+        "type": "delay",
+        "z": "ae6680992ac0af08",
+        "name": "Delay 5-10s",
+        "pauseType": "random",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "5",
+        "randomLast": "10",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 290,
+        "y": 520,
+        "wires": [
+            [
+                "6ea3d642186cac43"
+            ]
+        ]
+    },
+    {
+        "id": "90f8f6da092cc421",
+        "type": "link out",
+        "z": "ae6680992ac0af08",
+        "name": "Product list delete output",
+        "mode": "link",
+        "links": [
+            "d8a045477906020d",
+            "350f8955a9a53def"
+        ],
+        "x": 515,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "43f6f6cd4a7ac241",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Button to manually scrape all products from database",
+        "info": "",
+        "x": 220,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "746225caba45e5d2",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "After the insert, this will call the scraper for that product",
+        "info": "",
+        "x": 220,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "89a1cc9712eb78be",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Delete that product from database and URLs",
+        "info": "",
+        "x": 770,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "d8a045477906020d",
+        "type": "link in",
+        "z": "ae6680992ac0af08",
+        "name": "Delete product from database",
+        "links": [
+            "90f8f6da092cc421"
+        ],
+        "x": 655,
+        "y": 80,
+        "wires": [
+            [
+                "6ccf24fac46fb841"
+            ]
+        ]
+    },
+    {
+        "id": "79f9dfefdfa476dd",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT code, url \nFROM products\nWHERE code=($code)\nLIMIT 1;",
+        "name": "Get a product code, url from db",
+        "x": 830,
+        "y": 120,
+        "wires": [
+            [
+                "0964fdfe42836bb4"
+            ]
+        ]
+    },
+    {
+        "id": "6ccf24fac46fb841",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Set sql params for code",
+        "func": "msg.params = {\n    $code: msg.to_del\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 80,
+        "wires": [
+            [
+                "79f9dfefdfa476dd",
+                "caaca1249d502ec5"
+            ]
+        ]
+    },
+    {
+        "id": "405453336994f4b6",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE \nFROM to_scrape\nWHERE URL=($url);",
+        "name": "Delete an URL from db",
+        "x": 940,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9687944dbe47fbe6",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Set sql params for url",
+        "func": "msg.params = {\n    $url: msg.payload.url\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 160,
+        "wires": [
+            [
+                "405453336994f4b6"
+            ]
+        ]
+    },
+    {
+        "id": "0964fdfe42836bb4",
+        "type": "split",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 1050,
+        "y": 120,
+        "wires": [
+            [
+                "9687944dbe47fbe6"
+            ]
+        ]
+    },
+    {
+        "id": "3038d9a0165c07b8",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE\nFROM products\nWHERE code=($code);",
+        "name": "Delete a product from db",
+        "x": 1210,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "caaca1249d502ec5",
+        "type": "delay",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1020,
+        "y": 80,
+        "wires": [
+            [
+                "3038d9a0165c07b8"
+            ]
+        ]
+    },
+    {
+        "id": "859a172acbae108c",
+        "type": "ui_chart",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "group": "52621da90fc58432",
+        "order": 1,
+        "width": 28,
+        "height": 8,
+        "label": "Price history chart",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "D/M/Y HH:mm",
+        "interpolate": "bezier",
+        "nodata": "There's no product selected, yet.",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "4",
+        "removeOlderPoints": "30",
+        "removeOlderUnit": "604800",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#969696",
+            "#df0101",
+            "#15b300",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 950,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "61c6310e8d6c1898",
+        "type": "switch",
+        "z": "ae6680992ac0af08",
+        "name": "Delete or history",
+        "property": "to_del",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "90f8f6da092cc421"
+            ],
+            [
+                "6fcd366e9f14b285"
+            ]
+        ]
+    },
+    {
+        "id": "6fcd366e9f14b285",
+        "type": "link out",
+        "z": "ae6680992ac0af08",
+        "name": "Product list history output",
+        "mode": "link",
+        "links": [
+            "52aea1554047985f"
+        ],
+        "x": 515,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "16b79a9780cdf16b",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Set sql params for code",
+        "func": "msg.params = {\n    $code: msg.history\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 360,
+        "wires": [
+            [
+                "b6d4753780191f7f"
+            ]
+        ]
+    },
+    {
+        "id": "b6d4753780191f7f",
+        "type": "sqlite",
+        "z": "ae6680992ac0af08",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT orPrice, price, rePrice, timestamp\nFROM products\nWHERE code=($code)\nORDER BY timestamp;",
+        "name": "Get a product from db",
+        "x": 860,
+        "y": 400,
+        "wires": [
+            [
+                "5f397aa8ca4dd208"
+            ]
+        ]
+    },
+    {
+        "id": "52aea1554047985f",
+        "type": "link in",
+        "z": "ae6680992ac0af08",
+        "name": "Delete product from database",
+        "links": [
+            "6fcd366e9f14b285"
+        ],
+        "x": 655,
+        "y": 360,
+        "wires": [
+            [
+                "16b79a9780cdf16b"
+            ]
+        ]
+    },
+    {
+        "id": "6ba1d21a2d9b1542",
+        "type": "change",
+        "z": "ae6680992ac0af08",
+        "name": "Blank array",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "[]",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 730,
+        "y": 480,
+        "wires": [
+            [
+                "859a172acbae108c"
+            ]
+        ]
+    },
+    {
+        "id": "fef9c3526a842d04",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Populate chart with price history data",
+        "info": "",
+        "x": 740,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "5f397aa8ca4dd208",
+        "type": "function",
+        "z": "ae6680992ac0af08",
+        "name": "Format data for chart",
+        "func": "var orpa = []\nvar prca = []\nvar repa = []\n\nmsg.payload.forEach(function(p) {\n    p.orPrice > 0 ? orpa.push({ \"x\": p.timestamp, \"y\": p.orPrice}) : \"\"\n    p.price > 0 ? prca.push({ \"x\": p.timestamp, \"y\": p.price }) : \"\"\n    p.rePrice > 0 ? repa.push({ \"x\": p.timestamp, \"y\": p.rePrice }) : \"\"\n});\n\nlet data = [orpa, prca, repa]\nmsg.payload = [\n    {\n        \"series\": [\"Initial price\",\"Sale price\",\"Resealed price\"],\n        \"data\": data,\n        \"labels\": [\"\"]\n    }\n]\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 440,
+        "wires": [
+            [
+                "859a172acbae108c"
+            ]
+        ]
+    },
+    {
+        "id": "c753c033f2e48e3a",
+        "type": "catch",
+        "z": "ae6680992ac0af08",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 120,
+        "y": 1160,
+        "wires": [
+            [
+                "26d0bf3523e8d30a"
+            ]
+        ]
+    },
+    {
+        "id": "1e5cc82f2da79b27",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "Catch errors and show them in frontend",
+        "info": "",
+        "x": 170,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "680b4811271bba8c",
+        "type": "comment",
+        "z": "ae6680992ac0af08",
+        "name": "A simple URL to your Telegram bot",
+        "info": "",
+        "x": 160,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "9997f19a34dacdc5",
+        "type": "link in",
+        "z": "ae6680992ac0af08",
+        "name": "Update frontend products list",
+        "links": [
+            "70d97e0b17328dfd"
+        ],
+        "x": 75,
+        "y": 120,
+        "wires": [
+            [
+                "f59c8b6d95a9527f"
+            ]
+        ]
+    },
+    {
+        "id": "70d97e0b17328dfd",
+        "type": "link out",
+        "z": "ae6680992ac0af08",
+        "name": "Existing database URLs rate limit output",
+        "mode": "link",
+        "links": [
+            "9997f19a34dacdc5"
+        ],
+        "x": 445,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "6ea3d642186cac43",
+        "type": "link call",
+        "z": "ae6680992ac0af08",
+        "name": "Scrape and insert product",
+        "links": [
+            "d612eb153492e4ee"
+        ],
+        "linkType": "static",
+        "timeout": "30",
+        "x": 290,
+        "y": 560,
+        "wires": [
+            [
+                "70d97e0b17328dfd"
+            ]
+        ]
+    },
+    {
+        "id": "ea6550b02ad089ff",
+        "type": "inject",
+        "z": "ae6680992ac0af08",
+        "name": "Run at every hour",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "3600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 150,
+        "y": 360,
+        "wires": [
+            [
+                "e966889308120be8"
+            ]
+        ]
+    },
+    {
+        "id": "1b2b44a3648b05fc",
+        "type": "link in",
+        "z": "ae6680992ac0af08",
+        "name": "Error in",
+        "links": [],
+        "x": 75,
+        "y": 1120,
+        "wires": [
+            [
+                "26d0bf3523e8d30a"
+            ]
+        ]
+    },
+    {
+        "id": "de1094840dd90b61",
+        "type": "inject",
+        "z": "ae6680992ac0af08",
+        "name": "Clear",
+        "props": [
+            {
+                "p": "error",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 1240,
+        "wires": [
+            [
+                "26d0bf3523e8d30a"
+            ]
+        ]
+    },
+    {
+        "id": "5fcc15de03d9f4db",
+        "type": "tab",
+        "label": "Product scraper: notification",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "ce9e5ad812d23012",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "Thanks for the message. Please pick a valid command from the menu."
+            }
+        ],
+        "language": "none",
+        "x": 350,
+        "y": 260,
+        "wires": [
+            [
+                "8b5d6b4f10714b45"
+            ]
+        ]
+    },
+    {
+        "id": "8b5d6b4f10714b45",
+        "type": "chatbot-telegram-send",
+        "z": "5fcc15de03d9f4db",
+        "bot": "2c5102c4bbe71250",
+        "botProduction": "",
+        "track": false,
+        "passThrough": false,
+        "errorOutput": false,
+        "outputs": 0,
+        "x": 630,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "5cdc9f4364019329",
+        "type": "chatbot-telegram-menu",
+        "z": "5fcc15de03d9f4db",
+        "bot": "2c5102c4bbe71250",
+        "items": [
+            {
+                "command": "/list",
+                "description": "Current product list"
+            },
+            {
+                "command": "/subscribe",
+                "description": "Subscribe to price discounts"
+            },
+            {
+                "command": "/unsubscribe",
+                "description": "Don't receive notification anymore"
+            }
+        ],
+        "x": 320,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "ed7a078fe8f6a79f",
+        "type": "inject",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 80,
+        "wires": [
+            [
+                "5cdc9f4364019329"
+            ]
+        ]
+    },
+    {
+        "id": "5ed8e93453cc7a1c",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Telegram context menu",
+        "info": "",
+        "x": 120,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "fc6bb64d589880d3",
+        "type": "chatbot-rules",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "rules": [
+            {
+                "type": "command",
+                "command": "/list"
+            },
+            {
+                "type": "command",
+                "command": "/subscribe"
+            },
+            {
+                "type": "command",
+                "command": "/unsubscribe"
+            },
+            {
+                "type": "catchAll"
+            }
+        ],
+        "outputs": 4,
+        "x": 190,
+        "y": 200,
+        "wires": [
+            [
+                "326f67444d9bd971"
+            ],
+            [
+                "70a7f5a8d733ca3d"
+            ],
+            [
+                "f37a3c93992cbb2d"
+            ],
+            [
+                "ce9e5ad812d23012"
+            ]
+        ]
+    },
+    {
+        "id": "ce6208eabdf3fdb0",
+        "type": "chatbot-telegram-receive",
+        "z": "5fcc15de03d9f4db",
+        "bot": "2c5102c4bbe71250",
+        "botProduction": "",
+        "x": 130,
+        "y": 120,
+        "wires": [
+            [
+                "fc6bb64d589880d3"
+            ]
+        ]
+    },
+    {
+        "id": "fd70629d3dbaa36d",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Send the updated list of products though Telegram",
+        "info": "",
+        "x": 210,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "7ccf0b66d5895e77",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Scraper Telegram output",
+        "links": [
+            "08e7e87937cbaaad",
+            "a7c768ec2bcbdb25",
+            "253c3b57e1879776",
+            "7ad961081b6e4d63",
+            "94e4d024ef2d2c35"
+        ],
+        "x": 455,
+        "y": 180,
+        "wires": [
+            [
+                "8b5d6b4f10714b45"
+            ]
+        ]
+    },
+    {
+        "id": "326f67444d9bd971",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Scraper Telegram product list",
+        "mode": "link",
+        "links": [
+            "ad2428a08003d439"
+        ],
+        "x": 315,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "70a7f5a8d733ca3d",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Scraper Telegram subscribe",
+        "mode": "link",
+        "links": [
+            "d1aead59f0d41fa6"
+        ],
+        "x": 315,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "f37a3c93992cbb2d",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Scraper Telegram unsubscribe",
+        "mode": "link",
+        "links": [
+            "ed1726f6104fa42b"
+        ],
+        "x": 315,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "ad2428a08003d439",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Send product list to Telegram",
+        "links": [
+            "326f67444d9bd971"
+        ],
+        "x": 75,
+        "y": 380,
+        "wires": [
+            [
+                "82fe68e4644a2f40"
+            ]
+        ]
+    },
+    {
+        "id": "82fe68e4644a2f40",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT title, review, orPrice, price, rePrice, code, img, url, timestamp \nFROM products\nGROUP BY code\nHAVING MAX(timestamp)\nORDER BY timestamp DESC;",
+        "name": "Get products from db",
+        "x": 220,
+        "y": 380,
+        "wires": [
+            [
+                "bb064904a4b89312"
+            ]
+        ]
+    },
+    {
+        "id": "1a42b5b040811020",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "{{payload}}"
+            }
+        ],
+        "language": "none",
+        "x": 350,
+        "y": 460,
+        "wires": [
+            [
+                "69b077e64018ee23"
+            ]
+        ]
+    },
+    {
+        "id": "69b077e64018ee23",
+        "type": "chatbot-params",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "params": [
+            {
+                "platform": "telegram",
+                "name": "parseMode",
+                "value": "HTML"
+            },
+            {
+                "platform": "telegram",
+                "name": "disableWebPagePreview",
+                "value": true
+            }
+        ],
+        "outputs": 1,
+        "x": 380,
+        "y": 500,
+        "wires": [
+            [
+                "08e7e87937cbaaad"
+            ]
+        ]
+    },
+    {
+        "id": "bb064904a4b89312",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "To HTML table",
+        "func": "var html_output = \"Product title \\nPrice: Initial; Sale; Resealed;\\n\"\nmsg.payload.forEach(function(p) {\n    let ps_title = p.title.slice(0, 35) + \"...\"\n    html_output += `<a href=\"${p.url}\">${ps_title}</a>\\n`\n    let orPrice = \"   None\"\n    let price = \"   None\"\n    let rePrice = \"   None\"\n    if (p.orPrice > 0){ orPrice = p.orPrice.toString().padStart(7, \" \") }\n    if (p.price > 0){ price = p.price.toString().padStart(7, \" \") }\n    if (p.rePrice){ rePrice = p.rePrice.toString().padStart(7, \" \") }\n    html_output += `<pre>I:${orPrice}; S:${price}; R:${rePrice};</pre>\\n`\n});\nhtml_output += \"\"\nmsg.payload = html_output\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 420,
+        "wires": [
+            [
+                "1a42b5b040811020"
+            ]
+        ]
+    },
+    {
+        "id": "08e7e87937cbaaad",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Output product list to Telegram",
+        "mode": "link",
+        "links": [
+            "7ccf0b66d5895e77"
+        ],
+        "x": 495,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "cd61ca890b13c548",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Subscribe: add chatID to the database",
+        "info": "",
+        "x": 170,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "9161de48d7e2b2c6",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Unsubscribe: remove chatID from the database",
+        "info": "",
+        "x": 200,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "d1aead59f0d41fa6",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Add Telegram subscriber to database",
+        "links": [
+            "70a7f5a8d733ca3d"
+        ],
+        "x": 75,
+        "y": 620,
+        "wires": [
+            [
+                "3e335bd20f768942"
+            ]
+        ]
+    },
+    {
+        "id": "ed1726f6104fa42b",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Remove Telegram subscriber from database",
+        "links": [
+            "f37a3c93992cbb2d"
+        ],
+        "x": 75,
+        "y": 880,
+        "wires": [
+            [
+                "8376b111c18188f3"
+            ]
+        ]
+    },
+    {
+        "id": "e01ab94eedd2d2d9",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Set sql params chatid",
+        "func": "msg.discount = parseInt(msg.payload.arguments[0])\nmsg.params = {\n    $chatid: msg.payload.chatId\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 240,
+        "y": 660,
+        "wires": [
+            [
+                "5c413ee7e8b936ea"
+            ]
+        ]
+    },
+    {
+        "id": "bd33c667f67939b3",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO subscribers (chatid, discount) \nVALUES ($chatid, $discount);",
+        "name": "Insert subscriber to db",
+        "x": 320,
+        "y": 740,
+        "wires": [
+            [
+                "4322d5ef82a0358b"
+            ]
+        ]
+    },
+    {
+        "id": "3e335bd20f768942",
+        "type": "switch",
+        "z": "5fcc15de03d9f4db",
+        "name": "Check for discount",
+        "property": "payload.arguments",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "empty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 210,
+        "y": 620,
+        "wires": [
+            [
+                "655d2b8b15bb9e11"
+            ],
+            [
+                "e01ab94eedd2d2d9"
+            ]
+        ]
+    },
+    {
+        "id": "a7c768ec2bcbdb25",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Subscribe to Telegram output ",
+        "mode": "link",
+        "links": [
+            "7ccf0b66d5895e77"
+        ],
+        "x": 715,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "655d2b8b15bb9e11",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "It looks like you didn't provide a percentage at which to receive the discount notification. \nE.g.: /subscribe 10\nTo get notification if a product price decreases with 10%."
+            }
+        ],
+        "language": "none",
+        "x": 390,
+        "y": 620,
+        "wires": [
+            [
+                "a7c768ec2bcbdb25"
+            ]
+        ]
+    },
+    {
+        "id": "5c413ee7e8b936ea",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT * \nFROM subscribers\nWHERE chatid=($chatid);",
+        "name": "Get subscribers from db",
+        "x": 470,
+        "y": 660,
+        "wires": [
+            [
+                "51c53017de13c524"
+            ]
+        ]
+    },
+    {
+        "id": "f22091fd96b6068f",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Set sql params discount",
+        "func": "msg.params.$discount = msg.discount\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 270,
+        "y": 700,
+        "wires": [
+            [
+                "bd33c667f67939b3"
+            ]
+        ]
+    },
+    {
+        "id": "51c53017de13c524",
+        "type": "switch",
+        "z": "5fcc15de03d9f4db",
+        "name": "Already subscribed",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 690,
+        "y": 660,
+        "wires": [
+            [
+                "d54b3fc32cd80895"
+            ],
+            [
+                "f22091fd96b6068f"
+            ]
+        ]
+    },
+    {
+        "id": "d54b3fc32cd80895",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "You are already subscribed."
+            }
+        ],
+        "language": "none",
+        "x": 730,
+        "y": 700,
+        "wires": [
+            [
+                "253c3b57e1879776"
+            ]
+        ]
+    },
+    {
+        "id": "253c3b57e1879776",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Subscribe to Telegram output ",
+        "mode": "link",
+        "links": [
+            "7ccf0b66d5895e77"
+        ],
+        "x": 815,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "4322d5ef82a0358b",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "You have been subscribed!"
+            }
+        ],
+        "language": "none",
+        "x": 730,
+        "y": 740,
+        "wires": [
+            [
+                "253c3b57e1879776"
+            ]
+        ]
+    },
+    {
+        "id": "8376b111c18188f3",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Set sql params for chatid",
+        "func": "msg.params = {\n    $chatid: msg.payload.chatId\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 880,
+        "wires": [
+            [
+                "9655f0d06d2f09a4"
+            ]
+        ]
+    },
+    {
+        "id": "9655f0d06d2f09a4",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE\nFROM subscribers\nWHERE chatid=($chatid);",
+        "name": "Delete a subscriber from db",
+        "x": 300,
+        "y": 920,
+        "wires": [
+            [
+                "d65d4ce4eacdafb9"
+            ]
+        ]
+    },
+    {
+        "id": "d65d4ce4eacdafb9",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": "You have been unsubscribed."
+            }
+        ],
+        "language": "none",
+        "x": 730,
+        "y": 920,
+        "wires": [
+            [
+                "7ad961081b6e4d63"
+            ]
+        ]
+    },
+    {
+        "id": "7ad961081b6e4d63",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Unsubscribe to Telegram output ",
+        "mode": "link",
+        "links": [
+            "7ccf0b66d5895e77"
+        ],
+        "x": 815,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "a8eef1b52d73988f",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT chatid, discount\nFROM subscribers;",
+        "name": "Get subscribers from db",
+        "x": 1070,
+        "y": 80,
+        "wires": [
+            [
+                "0573b458b89a045c"
+            ]
+        ]
+    },
+    {
+        "id": "f31ef9d5f6c169f2",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Send discount notification to all subscribers",
+        "info": "",
+        "x": 1020,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "1ee17e753f16296e",
+        "type": "chatbot-conversation",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "botDevelopment": "2c5102c4bbe71250",
+        "botProduction": "",
+        "chatId": "",
+        "userId": "",
+        "transport": "telegram",
+        "x": 1230,
+        "y": 200,
+        "wires": [
+            [
+                "76f391391e7c763a"
+            ]
+        ]
+    },
+    {
+        "id": "0573b458b89a045c",
+        "type": "split",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 1250,
+        "y": 80,
+        "wires": [
+            [
+                "749cef8ea286d8ff"
+            ]
+        ]
+    },
+    {
+        "id": "749cef8ea286d8ff",
+        "type": "change",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.chatId",
+                "pt": "msg",
+                "to": "$string(msg.payload.chatid)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1110,
+        "y": 120,
+        "wires": [
+            [
+                "e65682b857285cc8"
+            ]
+        ]
+    },
+    {
+        "id": "44e09216792abb8c",
+        "type": "chatbot-message",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "message": [
+            {
+                "message": ""
+            }
+        ],
+        "language": "none",
+        "x": 1290,
+        "y": 240,
+        "wires": [
+            [
+                "4697387d109bfe25"
+            ]
+        ]
+    },
+    {
+        "id": "94e4d024ef2d2c35",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Subscribers notification output ",
+        "mode": "link",
+        "links": [
+            "7ccf0b66d5895e77"
+        ],
+        "x": 1555,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "5b3606c21712bf6d",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Trigger at each new product scrape",
+        "info": "",
+        "x": 1340,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "e46774be9bd41590",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Notification at discount trigger",
+        "links": [
+            "c94cb2b4c95490fd"
+        ],
+        "x": 915,
+        "y": 380,
+        "wires": [
+            [
+                "27ebc58f8dfb4ed8"
+            ]
+        ]
+    },
+    {
+        "id": "bfb210d5f4abba81",
+        "type": "sqlite",
+        "z": "5fcc15de03d9f4db",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT ID, title, review, orPrice, price, rePrice, code, img, url, timestamp\nFROM products\nWHERE code=($code)\nORDER BY ID DESC\nLIMIT 2;",
+        "name": "Get a product code, url from db",
+        "x": 1130,
+        "y": 420,
+        "wires": [
+            [
+                "9a801d0b63c82397"
+            ]
+        ]
+    },
+    {
+        "id": "27ebc58f8dfb4ed8",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Set sql params for code",
+        "func": "var code = msg.params.$code\nmsg.params = {\n    $code: code\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 380,
+        "wires": [
+            [
+                "bfb210d5f4abba81"
+            ]
+        ]
+    },
+    {
+        "id": "9a801d0b63c82397",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Calculate percent difference",
+        "func": "// Stop here if there's nothing to compare with.\nif (msg.payload.length < 2){\n    return;\n}\nvar percent = 0\nlet current_product = msg.payload[0]\nlet last_product = msg.payload[1]\nif (msg.payload.length == 2){\n    let diff = last_product.price - current_product.price\n    percent = Math.ceil((diff / current_product.price) * 100)\n}\nelse{\n    percent = 0;\n}\nmsg.discount_percent = percent\nmsg.compared_products = msg.payload\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1160,
+        "y": 460,
+        "wires": [
+            [
+                "52c2e26be78372c9"
+            ]
+        ]
+    },
+    {
+        "id": "be3d56dc0a9f19f7",
+        "type": "comment",
+        "z": "5fcc15de03d9f4db",
+        "name": "Calculate the price percent difference",
+        "info": "",
+        "x": 1010,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "e65682b857285cc8",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "Check for discount threshold",
+        "func": "let discount_threshold = msg.payload.discount\nlet product_discount = msg.discount_percent\nif (product_discount >= discount_threshold){\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1140,
+        "y": 160,
+        "wires": [
+            [
+                "1ee17e753f16296e"
+            ]
+        ]
+    },
+    {
+        "id": "76f391391e7c763a",
+        "type": "function",
+        "z": "5fcc15de03d9f4db",
+        "name": "To HTML table",
+        "func": "var html_output = `Product with ${msg.discount_percent}% discount!\\n`\nlet curr_p = msg.compared_products[0]\nlet last_p = msg.compared_products[1]\nlet ps_title = curr_p.title.slice(0, 35) + \"...\"\nhtml_output += `<a href=\"${curr_p.url}\">${ps_title}</a>\\n`\n\nlet c_price = \"   None\"\nlet c_rePrice = \"   None\"\nlet l_price = \"   None\"\nlet l_rePrice = \"   None\"\nif (curr_p.price > 0) { c_price = curr_p.price.toString().padStart(7, \" \") }\nif (curr_p.rePrice > 0) { c_rePrice = curr_p.rePrice.toString().padStart(7, \" \") }\nif (last_p.price > 0) { l_price = last_p.price.toString().padStart(7, \" \") }\nif (last_p.rePrice > 0) { l_rePrice = last_p.rePrice.toString().padStart(7, \" \") }\nhtml_output += `<pre>NEW - S:${c_price}; R:${c_rePrice};</pre>\\n`\nhtml_output += `<pre>OLD - S:${l_price}; R:${l_rePrice};</pre>\\n`\nhtml_output += \"\"\nmsg.payload = html_output\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1400,
+        "y": 200,
+        "wires": [
+            [
+                "44e09216792abb8c"
+            ]
+        ]
+    },
+    {
+        "id": "4697387d109bfe25",
+        "type": "chatbot-params",
+        "z": "5fcc15de03d9f4db",
+        "name": "",
+        "params": [
+            {
+                "platform": "telegram",
+                "name": "parseMode",
+                "value": "HTML"
+            },
+            {
+                "platform": "telegram",
+                "name": "disableWebPagePreview",
+                "value": true
+            }
+        ],
+        "outputs": 1,
+        "x": 1460,
+        "y": 240,
+        "wires": [
+            [
+                "94e4d024ef2d2c35"
+            ]
+        ]
+    },
+    {
+        "id": "52c2e26be78372c9",
+        "type": "link out",
+        "z": "5fcc15de03d9f4db",
+        "name": "Price difference output",
+        "mode": "link",
+        "links": [
+            "8a222f7d87f6e77c"
+        ],
+        "x": 1325,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "8a222f7d87f6e77c",
+        "type": "link in",
+        "z": "5fcc15de03d9f4db",
+        "name": "Discount notification send",
+        "links": [
+            "52c2e26be78372c9"
+        ],
+        "x": 915,
+        "y": 80,
+        "wires": [
+            [
+                "a8eef1b52d73988f"
+            ]
+        ]
+    },
+    {
+        "id": "593299a2821f3bf0",
+        "type": "tab",
+        "label": "Product scraper: testing",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "6e2d9d41e4adf94c",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO products (title, review, orPrice, price, rePrice, code, url, img, timestamp) \nVALUES ($title, $review, $orPrice, $price, $rePrice, $code, $url, $img, $timestamp)",
+        "name": "Insert product to db",
+        "x": 210,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f937c16655fc08a9",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"title\":\"Laptop Apple MacBook Air 13-inch, cu procesor Apple M2, 8 nuclee CPU si 8 nuclee GPU, 8 GB, 256GB, Midnight, Layout INT\",\"review\":4.83,\"orPrice\":7349.99,\"price\":5999.99,\"rePrice\":5449.99,\"url\":\"https://example.com\",\"img\":\"https://example.com\",\"code\":\"MLY33ZE/A\"}",
+        "payloadType": "json",
+        "x": 110,
+        "y": 80,
+        "wires": [
+            [
+                "d614ce62cc5414a1"
+            ]
+        ]
+    },
+    {
+        "id": "f852181b3954c364",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "params",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "d614ce62cc5414a1",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params",
+        "func": "let product = msg.payload\nmsg.params = {\n    $title: product.title,\n    $review: product.review,\n    $orPrice: product.orPrice,\n    $price: product.price,\n    $rePrice: product.rePrice,\n    $code: product.code,\n    $url: product.url,\n    $img: product.img,\n    $timestamp: Date.now()\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "6e2d9d41e4adf94c",
+                "f852181b3954c364"
+            ]
+        ]
+    },
+    {
+        "id": "cc5334ee417275bc",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO to_scrape (URL) VALUES ($url)",
+        "name": "Insert URL to db",
+        "x": 200,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aa5647dc91f787ca",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "https://www.example.com/laptop-apple-macbook-air-13-inch-cu-procesor-apple-m2-8-nuclee-cpu-si-8-nuclee-gpu-8-gb-256gb-midnight-layout-int-mly33ze-a/pd/DN36H4MBM/",
+        "payloadType": "str",
+        "x": 110,
+        "y": 260,
+        "wires": [
+            [
+                "cf2393d9a1450143"
+            ]
+        ]
+    },
+    {
+        "id": "cf2393d9a1450143",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params",
+        "func": "let url = msg.payload\nmsg.params = {\n    $url: url\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "cc5334ee417275bc",
+                "f1014717d4d02348"
+            ]
+        ]
+    },
+    {
+        "id": "f1014717d4d02348",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "params",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "2730228d3edc5a7c",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT title, review, orPrice, price, rePrice, code, url, img, timestamp \nFROM products;",
+        "name": "Get products from db",
+        "x": 180,
+        "y": 480,
+        "wires": [
+            [
+                "94795e0040d0d9df"
+            ]
+        ]
+    },
+    {
+        "id": "d714615385f919f8",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT URL \nFROM to_scrape",
+        "name": "Get URLs from db",
+        "x": 170,
+        "y": 620,
+        "wires": [
+            [
+                "da0188122cabf966"
+            ]
+        ]
+    },
+    {
+        "id": "870c98a7a1050998",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 440,
+        "wires": [
+            [
+                "2730228d3edc5a7c"
+            ]
+        ]
+    },
+    {
+        "id": "94795e0040d0d9df",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "da0188122cabf966",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "f046bf523d7f3848",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 580,
+        "wires": [
+            [
+                "d714615385f919f8"
+            ]
+        ]
+    },
+    {
+        "id": "b612fe131aa023b6",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Save a product to database",
+        "info": "",
+        "x": 140,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "04c2e410dbeabd73",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Add an URL to database",
+        "info": "",
+        "x": 130,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "d94359eda7719496",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Retrive products from database",
+        "info": "",
+        "x": 150,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "52367c61466ed0aa",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Retrive URLs from database",
+        "info": "",
+        "x": 140,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "98e7272207d16beb",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Product URL inject",
+        "props": [
+            {
+                "p": "url",
+                "v": "https://www.example.com/laptop-apple-macbook-air-13-inch-cu-procesor-apple-m2-8-nuclee-cpu-si-8-nuclee-gpu-8-gb-256gb-midnight-layout-int-mly33ze-a/pd/DN36H4MBM/",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 650,
+        "y": 80,
+        "wires": [
+            [
+                "8c7cde8cde2172d1"
+            ]
+        ]
+    },
+    {
+        "id": "8c7cde8cde2172d1",
+        "type": "http request",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 120,
+        "wires": [
+            [
+                "3fe5a5fbe408576f"
+            ]
+        ]
+    },
+    {
+        "id": "62a67823b195614c",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "3fe5a5fbe408576f",
+        "type": "cheerio-function",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "func": "function priceFloatParse(textPrice) {\n    // Remove currency ' Lei' at the end\n    textPrice = textPrice.replace(\" Lei\", \"\")\n    // Note: you don't need to do next two steps \n    // if your price is already in the e.g. en-US format\n    // Remove integers separator '.'\n    textPrice = textPrice.replace(\".\", \"\")\n    // Convert decimal separator from Romanian format ',' to '.'\n    textPrice = textPrice.replace(\",\", \".\")\n    return parseFloat(textPrice)\n}\n\nlet product = {}\nproduct.title = $('h1.page-title').text().trim()\nproduct.review = $('div.feedback-rating-2 a.rating-text')\nif (product.review && product.review.text()){\n    product.review = product.review.text().trim().match(/(\\d.+)/)[0]\n    product.review = parseFloat(product.review)\n} else { product.review = -1 }\nproduct.orPrice = $('div.pricing-block p.pricing.rrp-lp30d span')\nif (product.orPrice && product.orPrice.text()) { \n    product.orPrice = product.orPrice.contents().text().trim().match(/\\d.+/)[0] \n    product.orPrice = priceFloatParse(product.orPrice)\n} \nelse { product.orPrice = -1 }\nproduct.price = $('div.pricing-block p.product-new-price')\nif (product.price && product.price.text()) {\n    product.price = product.price.first().contents().text()\n    product.price = priceFloatParse(product.price)\n}\nelse { product.price = -1 }\nproduct.rePrice = $('div.alternative-panel-resealed-box p.product-new-price')\nif (product.rePrice && product.rePrice.text()) {\n    product.rePrice = product.rePrice.contents().text()\n    product.rePrice = priceFloatParse(product.rePrice)\n}\nelse { product.rePrice = -1 }\nproduct.code = $('span.product-code-display').text().trim().match(/(?<=: ).*/)[0]\nproduct.url = msg.url\nproduct.img = $('div.product-gallery-wrapper.product-gallery-www div.thumbnail-wrapper img').attr('src')\nmsg.payload = product\nreturn msg;",
+        "outputs": 1,
+        "noerr": 8,
+        "x": 760,
+        "y": 160,
+        "wires": [
+            [
+                "62a67823b195614c"
+            ]
+        ]
+    },
+    {
+        "id": "6a6e85687a93ff03",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Scrape a single product data",
+        "info": "",
+        "x": 640,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "e038ea5ebde04fdc",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject product page: all prices",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 680,
+        "y": 200,
+        "wires": [
+            [
+                "3fe5a5fbe408576f"
+            ]
+        ]
+    },
+    {
+        "id": "efc37acb7c13927f",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject product page: no initial price",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 700,
+        "y": 240,
+        "wires": [
+            [
+                "3fe5a5fbe408576f"
+            ]
+        ]
+    },
+    {
+        "id": "60d62269508f1d4c",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject product page: no price, unavailable",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 720,
+        "y": 320,
+        "wires": [
+            [
+                "3fe5a5fbe408576f"
+            ]
+        ]
+    },
+    {
+        "id": "7a59fe26df718ec0",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject product page: only sale price",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 700,
+        "y": 280,
+        "wires": [
+            [
+                "3fe5a5fbe408576f"
+            ]
+        ]
+    },
+    {
+        "id": "553353aff59aea3c",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "SELECT code, url \nFROM products\nWHERE code=($code)\nLIMIT 1;",
+        "name": "Get a product code, url from db",
+        "x": 710,
+        "y": 520,
+        "wires": [
+            [
+                "328b8fe1e35fd72d"
+            ]
+        ]
+    },
+    {
+        "id": "1743db7a832b5575",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params for code",
+        "func": "msg.params = {\n    $code: msg.payload\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 480,
+        "wires": [
+            [
+                "553353aff59aea3c",
+                "c4eddd38c7c486af"
+            ]
+        ]
+    },
+    {
+        "id": "ad80d0aaca909ac0",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE \nFROM to_scrape\nWHERE URL=($url);",
+        "name": "Delete an URL from db",
+        "x": 820,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "69a043da5425b47c",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params for url",
+        "func": "msg.params = {\n    $url: msg.payload.url\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 560,
+        "wires": [
+            [
+                "ad80d0aaca909ac0"
+            ]
+        ]
+    },
+    {
+        "id": "328b8fe1e35fd72d",
+        "type": "split",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 930,
+        "y": 520,
+        "wires": [
+            [
+                "69a043da5425b47c"
+            ]
+        ]
+    },
+    {
+        "id": "85d14c3312b2cf42",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE\nFROM products\nWHERE code=($code);",
+        "name": "Delete a product from db",
+        "x": 1120,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c4eddd38c7c486af",
+        "type": "delay",
+        "z": "593299a2821f3bf0",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 900,
+        "y": 480,
+        "wires": [
+            [
+                "85d14c3312b2cf42"
+            ]
+        ]
+    },
+    {
+        "id": "5a98ef845c3d7c5c",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Delete a product using code",
+        "info": "",
+        "x": 640,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "a9c3f3b73660354c",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "MLY33ZE/A",
+        "payloadType": "str",
+        "x": 610,
+        "y": 440,
+        "wires": [
+            [
+                "1743db7a832b5575"
+            ]
+        ]
+    },
+    {
+        "id": "22bf1e3061361da7",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO subscribers (chatid, discount) \nVALUES ($chatid, $discount);",
+        "name": "Insert subscriber to db",
+        "x": 220,
+        "y": 800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "00f3975db387e50d",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject",
+        "props": [
+            {
+                "p": "payload.chatid",
+                "v": "1234542111",
+                "vt": "num"
+            },
+            {
+                "p": "payload.discount",
+                "v": "10",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 720,
+        "wires": [
+            [
+                "1ba8c649b5863372"
+            ]
+        ]
+    },
+    {
+        "id": "1ba8c649b5863372",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params",
+        "func": "msg.params = {\n    $chatid: msg.payload.chatid,\n    $discount: msg.payload.discount\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 160,
+        "y": 760,
+        "wires": [
+            [
+                "22bf1e3061361da7",
+                "c07c34dbf3349a0b"
+            ]
+        ]
+    },
+    {
+        "id": "c07c34dbf3349a0b",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "params",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "22541c4fb1b4b846",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Add chat subscriber",
+        "info": "",
+        "x": 110,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "aaa79f3b4f53fd85",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "fixed",
+        "sql": "SELECT chatid, discount\nFROM subscribers;",
+        "name": "Get subscribers from db",
+        "x": 190,
+        "y": 940,
+        "wires": [
+            [
+                "e090d97c8356c1ca"
+            ]
+        ]
+    },
+    {
+        "id": "2c9452afb3a8ca56",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 900,
+        "wires": [
+            [
+                "aaa79f3b4f53fd85"
+            ]
+        ]
+    },
+    {
+        "id": "e090d97c8356c1ca",
+        "type": "debug",
+        "z": "593299a2821f3bf0",
+        "name": "debug 10",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "058f68c344e370e9",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Retrive subscribers from database",
+        "info": "",
+        "x": 160,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "10139efba2c057dd",
+        "type": "comment",
+        "z": "593299a2821f3bf0",
+        "name": "Delete a subscriber from database",
+        "info": "",
+        "x": 660,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "dec478022c19e0bb",
+        "type": "sqlite",
+        "z": "593299a2821f3bf0",
+        "mydb": "2e6863e7c050217b",
+        "sqlquery": "prepared",
+        "sql": "DELETE\nFROM subscribers\nWHERE chatid=($chatid);",
+        "name": "Delete a subscriber from db",
+        "x": 760,
+        "y": 800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b8cc2e333769cb7a",
+        "type": "inject",
+        "z": "593299a2821f3bf0",
+        "name": "Inject",
+        "props": [
+            {
+                "p": "payload.chatid",
+                "v": "1234542111",
+                "vt": "num"
+            },
+            {
+                "p": "payload.discount",
+                "v": "10",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 610,
+        "y": 720,
+        "wires": [
+            [
+                "03946eaae9fbd96e"
+            ]
+        ]
+    },
+    {
+        "id": "03946eaae9fbd96e",
+        "type": "function",
+        "z": "593299a2821f3bf0",
+        "name": "Set sql params for chatid",
+        "func": "msg.params = {\n    $chatid: msg.payload.chatid,\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 760,
+        "wires": [
+            [
+                "dec478022c19e0bb"
+            ]
+        ]
+    },
+    {
+        "id": "2e6863e7c050217b",
+        "type": "sqlitedb",
+        "db": "/data/product-scraper.sql",
+        "mode": "RWC"
+    },
+    {
+        "id": "13c0363b.95162a",
+        "type": "ui_group",
+        "name": "Scrape modify",
+        "tab": "fade9e4e.8a9ed",
+        "order": 2,
+        "disp": false,
+        "width": "10",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "e1efb934.043c38",
+        "type": "ui_group",
+        "name": "Product list",
+        "tab": "fade9e4e.8a9ed",
+        "order": 1,
+        "disp": false,
+        "width": "18",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "52621da90fc58432",
+        "type": "ui_group",
+        "name": "Charts",
+        "tab": "fade9e4e.8a9ed",
+        "order": 3,
+        "disp": false,
+        "width": "28",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "2c5102c4bbe71250",
+        "type": "chatbot-telegram-node",
+        "botname": "TeleBot",
+        "usernames": "",
+        "polling": "1000",
+        "store": "",
+        "log": "",
+        "debug": false,
+        "skipMediaFiles": false,
+        "webHook": "",
+        "connectMode": "polling",
+        "storeMessages": true,
+        "enableMissionControl": false,
+        "inspectMessages": true,
+        "chatbotId": ""
+    },
+    {
+        "id": "fade9e4e.8a9ed",
+        "type": "ui_tab",
+        "name": "Product scraper",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
